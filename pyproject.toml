@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "active-mcp-interceptor"
+version = "0.1.0"
+description = "Starter project for detecting indirect prompt injection in MCP agent traces"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "scikit-learn>=1.4",
+  "numpy>=1.26",
+  "joblib>=1.4",
+  "requests>=2.31",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
