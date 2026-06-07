@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from bipia.data import AutoPIABuilder
-from interceptor.io import save_jsonl
+from interceptor.io import load_jsonl, save_jsonl
 
 DOMAINS = ["email", "table", "code"]
 
@@ -18,7 +18,7 @@ def to_str(v: object) -> str:
     return " ".join(str(x) for x in v) if isinstance(v, list) else str(v or "")
 
 
-def build_malicious(data_dir: Path, seed: int, split: str) -> pd.DataFrame:
+def build_malicious(data_dir: Path, seed: int, split: str) -> list[dict]:
     frames = []
     for domain in DOMAINS:
         attack_file = data_dir / (f"code_attack_{split}.json" if domain == "code" else f"text_attack_{split}.json")
@@ -27,13 +27,16 @@ def build_malicious(data_dir: Path, seed: int, split: str) -> pd.DataFrame:
         df["domain"] = domain
         frames.append(df)
         print(f"  {domain}: {len(df)} malicious samples")
-    return pd.concat(frames, ignore_index=True)
+    combined = pd.concat(frames, ignore_index=True)
+    return [
+        {"user_goal": str(r["question"]), "context": str(r["context"]), "label": 1, "domain": str(r["domain"]), "source": "bipia"}
+        for _, r in combined.iterrows()
+    ]
 
 
-def build_benign(data_dir: Path, splits: list[str]) -> list[dict]:
-    rows = []
-    seen = set()
-    for split in splits:
+def build_bipia_benign(data_dir: Path) -> list[dict]:
+    rows, seen = [], set()
+    for split in ["train", "test"]:
         for domain in DOMAINS:
             path = data_dir / domain / f"{split}.jsonl"
             if not path.exists():
@@ -47,57 +50,73 @@ def build_benign(data_dir: Path, splits: list[str]) -> list[dict]:
                 key = (question, context)
                 if question and context and key not in seen:
                     seen.add(key)
-                    rows.append({"question": question, "context": context, "domain": domain})
-    print(f"  {len(rows)} benign contexts ({'+'.join(splits)})")
+                    rows.append({"user_goal": question, "context": context, "label": 0, "domain": domain, "source": "bipia"})
+    print(f"  {len(rows)} BIPIA benign contexts")
     return rows
 
 
-def make_samples(mal_df: pd.DataFrame, benign_rows: list[dict], target: int, rng: random.Random) -> list[dict]:
-    malicious = [
-        {"user_goal": str(r["question"]), "context": str(r["context"]), "label": 1, "domain": str(r["domain"]), "source": "bipia"}
-        for _, r in mal_df.iterrows()
-    ]
-    benign = [
-        {"user_goal": r["question"], "context": r["context"], "label": 0, "domain": r["domain"], "source": "bipia"}
-        for r in benign_rows
-    ]
-    n_each = min(target // 2, len(malicious), len(benign))
-    rng.shuffle(malicious)
-    rng.shuffle(benign)
-    samples = malicious[:n_each] + benign[:n_each]
-    rng.shuffle(samples)
-    return samples
+def load_synthetic_benign(path: Path) -> list[dict]:
+    if not path.exists():
+        print(f"  WARNING: {path} not found, skipping synthetic benign.")
+        return []
+    rows = load_jsonl(path)
+    for r in rows:
+        r["label"] = 0
+        r["source"] = "synthetic"
+    print(f"  {len(rows)} synthetic benign samples")
+    return rows
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bipia_dir", type=Path, default=Path("data/bipia_repo/benchmark"),
-                        help="Path to the BIPIA benchmark directory. Clone with: git clone https://github.com/microsoft/BIPIA.git data/bipia_repo")
+    parser.add_argument("--bipia_dir", type=Path, default=Path("data/bipia_repo/benchmark"))
+    parser.add_argument("--synthetic_benign", type=Path, default=Path("data/processed/benign_synthetic.jsonl"))
     parser.add_argument("--out_dir", type=Path, default=Path("data/processed"))
-    parser.add_argument("--train_size", type=int, default=6000)
-    parser.add_argument("--test_size", type=int, default=2000)
+    parser.add_argument("--train_size", type=int, default=5000, help="Total train samples (half malicious, half benign).")
+    parser.add_argument("--test_size", type=int, default=5000, help="Total test samples (half malicious, half benign).")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     if not args.bipia_dir.exists():
         print(f"ERROR: {args.bipia_dir} not found.")
-        print("Clone the BIPIA repo first:")
-        print("  git clone https://github.com/microsoft/BIPIA.git data/bipia_repo")
+        print("Clone with: git clone https://github.com/microsoft/BIPIA.git data/bipia_repo")
         sys.exit(1)
 
     rng = random.Random(args.seed)
 
-    print("Building train malicious samples (train attacks)...")
-    train_mal_df = build_malicious(args.bipia_dir, args.seed, split="train")
+    print("Building malicious samples...")
+    print("  [train split + train attacks]")
+    train_mal = build_malicious(args.bipia_dir, args.seed, split="train")
+    print("  [test split + test attacks]")
+    test_mal = build_malicious(args.bipia_dir, args.seed, split="test")
 
-    print("\nBuilding test malicious samples (test attacks)...")
-    test_mal_df = build_malicious(args.bipia_dir, args.seed, split="test")
+    print("\nBuilding benign pool...")
+    bipia_ben = build_bipia_benign(args.bipia_dir)
+    synth_ben = load_synthetic_benign(args.synthetic_benign)
 
-    print("\nBuilding benign samples...")
-    all_benign = build_benign(args.bipia_dir, splits=["train", "test"])
+    all_benign = bipia_ben + synth_ben
+    rng.shuffle(all_benign)
+    print(f"  Total benign pool: {len(all_benign)}")
 
-    train_samples = make_samples(train_mal_df, all_benign, args.train_size, rng)
-    test_samples = make_samples(test_mal_df, all_benign, args.test_size, rng)
+    n_train = args.train_size // 2
+    n_test = args.test_size // 2
+
+    if len(all_benign) < n_train + n_test:
+        print(f"WARNING: only {len(all_benign)} benign available, needed {n_train + n_test}")
+        n_train = len(all_benign) // 2
+        n_test = len(all_benign) - n_train
+
+    train_ben = all_benign[:n_train]
+    test_ben = all_benign[n_train:n_train + n_test]
+
+    rng.shuffle(train_mal)
+    rng.shuffle(test_mal)
+
+    train_samples = train_mal[:n_train] + train_ben
+    test_samples = test_mal[:n_test] + test_ben
+
+    rng.shuffle(train_samples)
+    rng.shuffle(test_samples)
 
     for i, s in enumerate(train_samples):
         s["id"] = f"train-{i}"
@@ -108,13 +127,15 @@ def main() -> None:
     save_jsonl(train_samples, args.out_dir / "train.jsonl")
     save_jsonl(test_samples, args.out_dir / "test.jsonl")
 
-    domain_counts: dict[str, int] = {}
-    for s in train_samples:
-        domain_counts[s["domain"]] = domain_counts.get(s["domain"], 0) + 1
+    mal_train = sum(1 for s in train_samples if s["label"] == 1)
+    ben_train = sum(1 for s in train_samples if s["label"] == 0)
+    mal_test = sum(1 for s in test_samples if s["label"] == 1)
+    ben_test = sum(1 for s in test_samples if s["label"] == 0)
 
-    print(f"\nSaved {len(train_samples)} train -> {args.out_dir / 'train.jsonl'}")
-    print(f"Saved {len(test_samples)} test  -> {args.out_dir / 'test.jsonl'}")
-    print("Domain distribution (train):", domain_counts)
+    print(f"\nTrain: {len(train_samples)} total | {mal_train} malicious | {ben_train} benign")
+    print(f"Test:  {len(test_samples)} total  | {mal_test} malicious  | {ben_test} benign")
+    print(f"\nSaved -> {args.out_dir / 'train.jsonl'}")
+    print(f"Saved -> {args.out_dir / 'test.jsonl'}")
 
 
 if __name__ == "__main__":
