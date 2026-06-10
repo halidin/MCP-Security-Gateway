@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
-
 from .model import DriftClassifier
 
 
@@ -15,7 +13,7 @@ class GuardDecision:
 class MCPGuard:
     """Online guard that blocks risky tool calls before execution."""
 
-    def __init__(self, classifier: DriftClassifier, threshold: float = 0.6, honey_resources: list[str] | None = None):
+    def __init__(self, classifier: DriftClassifier, threshold: float = 0.5, honey_resources: list[str] | None = None):
         self.classifier = classifier
         self.threshold = threshold
         self.honey_resources = set(x.lower() for x in (honey_resources or ["secrets.txt", "credentials.pdf"]))

@@ -4,11 +4,13 @@ from dataclasses import dataclass
 from typing import Iterable
 
 import joblib
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
 
 from .features import combine_goal_and_trace
 
@@ -23,21 +25,29 @@ class EvalResult:
 class DriftClassifier:
     """Classifier for detecting hijacked logic from goal-trace text pairs."""
 
-    def __init__(self, model_type: str = "random_forest", random_state: int = 42):
-        if model_type not in {"random_forest", "logistic"}:
-            raise ValueError("model_type must be one of: random_forest, logistic")
+    def __init__(self, model_type: str = "logistic", random_state: int = 42):
+        if model_type not in {"random_forest", "logistic", "svm", "gradient_boosting"}:
+            raise ValueError("model_type must be one of: random_forest, logistic, svm, gradient_boosting")
 
         if model_type == "random_forest":
             estimator = RandomForestClassifier(
                 n_estimators=300,
-                max_depth=None,
-                min_samples_split=2,
                 random_state=random_state,
                 n_jobs=-1,
             )
-        else:
+        elif model_type == "logistic":
             estimator = LogisticRegression(
                 max_iter=1000,
+                random_state=random_state,
+            )
+        elif model_type == "svm":
+            estimator = CalibratedClassifierCV(
+                LinearSVC(max_iter=2000, random_state=random_state)
+            )
+        elif model_type == "gradient_boosting":
+            estimator = GradientBoostingClassifier(
+                n_estimators=200,
+                max_depth=5,
                 random_state=random_state,
             )
 
