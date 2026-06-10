@@ -1,0 +1,7 @@
+{
+  "model": "logistic",
+  "precision": 0.8252853380158033,
+  "recall": 0.94,
+  "f1": 0.8789153810191679,
+  "test_samples": 2000
+}

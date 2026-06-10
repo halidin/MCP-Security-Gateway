@@ -1,0 +1,7 @@
+{
+  "model": "random_forest",
+  "precision": 0.8275862068965517,
+  "recall": 0.936,
+  "f1": 0.8784608165180666,
+  "test_samples": 2000
+}

@@ -1,0 +1,7 @@
+{
+  "model": "gradient_boosting",
+  "precision": 0.8285449490268767,
+  "recall": 0.894,
+  "f1": 0.86002886002886,
+  "test_samples": 2000
+}

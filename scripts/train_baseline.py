@@ -12,7 +12,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train baseline IPI detector.")
     parser.add_argument("--train", required=True, type=Path)
     parser.add_argument("--test", required=True, type=Path)
-    parser.add_argument("--model", choices=["random_forest", "logistic"], default="random_forest")
+    parser.add_argument("--model", choices=["random_forest", "logistic", "svm", "gradient_boosting"], default="logistic")
     parser.add_argument("--out_dir", required=True, type=Path)
     args = parser.parse_args()
 
@@ -43,7 +43,9 @@ def main() -> None:
         "f1": result.f1,
         "test_samples": len(test_rows),
     }
-    metrics_path = args.out_dir / f"{args.model}_metrics.json"
+    reports_dir = Path("reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = reports_dir / f"{args.model}_metrics.json"
     with metrics_path.open("w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
 
