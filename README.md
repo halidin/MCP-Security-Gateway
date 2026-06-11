@@ -1,3 +1,5 @@
+<img width="1504" height="179" alt="image" src="https://github.com/user-attachments/assets/8e86f53c-0418-4b86-a893-a1bfa7bf0381" />
+
 # MCP Security Gateway: Project Overview
 
 This project implements a research and prototype pipeline for the **Active MCP Interceptor**, designed to detect **Indirect Prompt Injection (IPI)** attacks before Model Context Protocol (MCP) tool execution. 
