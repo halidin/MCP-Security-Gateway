@@ -64,20 +64,14 @@ def main() -> None:
     prefixes_to_evaluate: list[str] = []
     prefix_mapping: list[tuple[int, int]] = [] # list of (malicious_row_index, step_idx_in_row)
     sample_steps: dict[int, list[str]] = {}
-    sample_tool_call: dict[int, int] = {}
 
     for idx in malicious_indices:
         row = rows[idx]
         steps = row.get("trace_steps")
         if not isinstance(steps, list) or not steps:
             steps = parse_trace_steps(row.get("agent_trace", ""))
-        
+
         sample_steps[idx] = steps
-        
-        tool_call = row.get("tool_call_step")
-        if tool_call is None:
-            tool_call = len(steps)
-        sample_tool_call[idx] = int(tool_call)
 
         for step_i in range(1, len(steps) + 1):
             prefix = " ".join(steps[:step_i])
@@ -104,16 +98,16 @@ def main() -> None:
         horizons: list[int] = []
         for idx in malicious_indices:
             scores = sample_prefix_scores[idx]
-            tool_call_step = sample_tool_call[idx]
-            
+            num_steps = len(sample_steps[idx])
+
             first_alert_step = None
             for step_i, score in enumerate(scores, start=1):
                 if score >= t:
                     first_alert_step = step_i
                     break
-            
+
             if first_alert_step is not None:
-                horizons.append(max(0, tool_call_step - first_alert_step))
+                horizons.append(max(0, num_steps - first_alert_step))
 
         # Compute horizon statistics
         if horizons:

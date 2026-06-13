@@ -21,11 +21,7 @@ def detection_horizon_for_sample(clf: DriftClassifier, row: dict, threshold: flo
     if not steps:
         return None
 
-    tool_call_step = row.get("tool_call_step")
-    if tool_call_step is None:
-        tool_call_step = len(steps)
-
-    tool_call_step = int(tool_call_step)
+    num_steps = len(steps)
 
     first_alert_step = None
     for i in range(1, len(steps) + 1):
@@ -38,7 +34,7 @@ def detection_horizon_for_sample(clf: DriftClassifier, row: dict, threshold: flo
     if first_alert_step is None:
         return None
 
-    return max(0, tool_call_step - first_alert_step)
+    return max(0, num_steps - first_alert_step)
 
 
 def main() -> None:
