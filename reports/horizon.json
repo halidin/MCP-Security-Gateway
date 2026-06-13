@@ -1,0 +1,7 @@
+{
+  "samples_total": 800,
+  "samples_malicious": 800,
+  "detected_malicious": 800,
+  "avg_detection_horizon_steps": 1.0,
+  "threshold": 0.6
+}

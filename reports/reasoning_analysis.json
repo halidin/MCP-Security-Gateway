@@ -1,0 +1,22 @@
+{
+  "total_samples": 10,
+  "reasoning_steps": {
+    "mean": 3.8,
+    "median": 4.0,
+    "std": 0.39999999999999997,
+    "min": 3,
+    "max": 4
+  },
+  "by_label": {
+    "benign": {
+      "count": 10,
+      "mean_steps": 3.8,
+      "median_steps": 4.0
+    },
+    "malicious": {
+      "count": 0,
+      "mean_steps": 0,
+      "median_steps": 0
+    }
+  }
+}

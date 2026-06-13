@@ -36,9 +36,9 @@ python scripts/run_guard_demo.py --model_path models/logistic.joblib --goal "sum
 
 To regenerate the poster charts (model comparison, horizon comparison, score distributions, etc.):
 ```powershell
-python scripts/plot_poster_charts.py
-python scripts/plot_horizon.py
-python scripts/plot_learning_curve.py
+python scripts/plots/plot_poster_charts.py
+python scripts/plots/plot_horizon.py
+python scripts/plots/plot_learning_curve.py
 ```
 
 ---
@@ -81,11 +81,17 @@ graph TD
   * **`train_baseline.py`**: Fits and saves a classifier baseline.
   * **`evaluate_horizon.py`**: Determines step-by-step detection capability (how early hijacking is caught).
   * **`evaluate_tradeoffs.py`**: Evaluates performance and horizon metrics across thresholds.
-  * **`generate_plots.py`**: Generates the comparison plot from tradeoffs reports.
   * **`run_guard_demo.py`**: Simulates a single guard evaluation on command.
   * **`analyze_reasoning_steps.py`**: Evaluates step length distributions on dataset files.
+* **`scripts/plots/`**: Plotting scripts
+  * **`generate_plots.py`**: Generates the comparison plot from tradeoffs reports.
+  * **`plot_horizon.py`**: Detection-horizon charts.
+  * **`plot_poster_charts.py`**: Poster charts (model comparison, score distributions, etc.).
+  * **`plot_live_demo.py`**, **`plot_email_demo.py`**, **`plot_code_demo.py`**: Live interception demo charts.
 * **`reports/`**: Tradeoff evaluation results and training accuracy metrics in JSON format.
-* **`plots/`**: Contains the generated performance evaluation plots in dark mode:
+* **`reports/plots/`**: Contains the generated performance evaluation plots in dark mode (PNG + SVG):
+    * `chart_horizon_*`: Detection-horizon charts from `plot_horizon.py`.
+    * `chart_*` (model comparison, PRF breakdown, score distribution, threshold trade-off, etc.): Poster charts from `plot_poster_charts.py`.
     * `horizon_comparison_0.60.png`: Average detection horizon steps comparison at threshold = 0.60.
     * `horizon_comparison_all_thresholds.png`: Grouped bar chart of malicious traces detected across thresholds.
     * `f1_curves_comparison.png`: F1-Score curves vs threshold for all classifiers.
@@ -255,12 +261,12 @@ $env:PYTHONPATH="src"
 | **Train baseline** | `python scripts/train_baseline.py --train data/traces/train.jsonl --test data/traces/test.jsonl --model [logistic/random_forest/svm/gradient_boosting] --out_dir models` |
 | **Evaluate horizon** | `python scripts/evaluate_horizon.py --model_path models/[model].joblib --test data/traces/test.jsonl --report reports/horizon.json` |
 | **Evaluate tradeoffs** | `python scripts/evaluate_tradeoffs.py --model_path models/[model].joblib --test data/traces/test.jsonl --out_dir reports` |
-| **Generate plots** | `python scripts/generate_plots.py` |
+| **Generate plots** | `python scripts/plots/generate_plots.py` |
 | **Test guard demo** | `python scripts/run_guard_demo.py --model_path models/[model].joblib --goal "[user goal]" --trace "[agent trace]" [--resource secrets.txt]` |
 | **Compare all models** | `python scripts/compare_models.py` |
-| **Generate poster charts** | `python scripts/plot_poster_charts.py` |
-| **Generate horizon comparison chart** | `python scripts/plot_horizon.py` |
-| **Generate learning curve chart** | `python scripts/plot_learning_curve.py` |
+| **Generate poster charts** | `python scripts/plots/plot_poster_charts.py` |
+| **Generate horizon comparison chart** | `python scripts/plots/plot_horizon.py` |
+| **Generate learning curve chart** | `python scripts/plots/plot_learning_curve.py` |
 
 ---
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import shutil
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -18,11 +17,7 @@ def load_report(path: Path) -> list[dict] | None:
 
 def main() -> None:
     reports_dir = Path("reports")
-    plots_dir = Path("plots")
-
-    # Clear existing plots folder to delete other plots
-    if plots_dir.exists():
-        shutil.rmtree(plots_dir)
+    plots_dir = Path("reports/plots")
     plots_dir.mkdir(parents=True, exist_ok=True)
 
     models = ["logistic", "random_forest", "gradient_boosting", "svm"]

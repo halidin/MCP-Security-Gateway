@@ -69,7 +69,7 @@ def load_synthetic_benign(path: Path) -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bipia_dir", type=Path, default=Path("data/bipia_repo/benchmark"))
+    parser.add_argument("--bipia_dir", type=Path, default=Path("data/bipia/benchmark"))
     parser.add_argument("--synthetic_benign", type=Path, default=Path("data/processed/benign_synthetic.jsonl"))
     parser.add_argument("--out_dir", type=Path, default=Path("data/processed"))
     parser.add_argument("--train_size", type=int, default=5000, help="Total train samples (half malicious, half benign).")
@@ -79,7 +79,7 @@ def main() -> None:
 
     if not args.bipia_dir.exists():
         print(f"ERROR: {args.bipia_dir} not found.")
-        print("Clone with: git clone https://github.com/microsoft/BIPIA.git data/bipia_repo")
+        print("Clone with: git clone https://github.com/microsoft/BIPIA.git data/bipia")
         sys.exit(1)
 
     rng = random.Random(args.seed)
