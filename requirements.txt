@@ -10,3 +10,5 @@ thefuzz
 emoji
 transformers
 requests
+matplotlib>=3.8
+sentence-transformers>=2.2
