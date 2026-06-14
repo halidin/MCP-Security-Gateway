@@ -5,8 +5,9 @@ venv/
 .env
 .env.local
 *.joblib
+*.egg-info/
 
 # Data and outputs
 data/processed/
-data/bipia_repo/
+data/bipia/
 models/
