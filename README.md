@@ -38,7 +38,6 @@ To regenerate the poster charts (model comparison, horizon comparison, score dis
 ```powershell
 python scripts/plots/plot_poster_charts.py
 python scripts/plots/plot_horizon.py
-python scripts/plots/plot_learning_curve.py
 ```
 
 ---
@@ -87,7 +86,6 @@ graph TD
   * **`generate_plots.py`**: Generates the comparison plot from tradeoffs reports.
   * **`plot_horizon.py`**: Detection-horizon charts.
   * **`plot_poster_charts.py`**: Poster charts (model comparison, score distributions, etc.).
-  * **`plot_live_demo.py`**, **`plot_email_demo.py`**, **`plot_code_demo.py`**: Live interception demo charts.
 * **`reports/`**: Tradeoff evaluation results and training accuracy metrics in JSON format.
 * **`reports/plots/`**: Contains the generated performance evaluation plots in dark mode (PNG + SVG):
     * `chart_horizon_*`: Detection-horizon charts from `plot_horizon.py`.
@@ -223,23 +221,23 @@ flowchart TD
 ```
 
 ### 1. Data Normalization & Synthesis (Offline)
-* **Ingestion**: Raw attack/benign data (e.g. from BIPIA datasets or custom generated sources) is parsed by [`prepare_bipia.py`](file:///c:/Μεταπτυχιακο/Advanced%20Topics%20in%20Machine%20Learning/MCP-Security-Gateway/MCP-Security-Gateway/scripts/prepare_bipia.py).
-* **LLM Simulation**: For advanced testing, [`generate_llm_traces.py`](file:///c:/Μεταπτυχιακο/Advanced%20Topics%20in%20Machine%20Learning/MCP-Security-Gateway/MCP-Security-Gateway/scripts/generate_llm_traces.py) prompts an LLM using a system prompt to solve the goal while recording its step-by-step reasoning steps.
+* **Ingestion**: Raw attack/benign data (e.g. from BIPIA datasets or custom generated sources) is parsed by [`prepare_bipia.py`](scripts/prepare_bipia.py).
+* **LLM Simulation**: For advanced testing, [`generate_llm_traces.py`](scripts/generate_llm_traces.py) prompts an LLM using a system prompt to solve the goal while recording its step-by-step reasoning steps.
 * **Saving**: The output is compiled into train/test `.jsonl` files mapping user goals to agent traces and labels (0 = benign, 1 = hijacked).
 
 ### 2. Training the Detector (Offline)
-* **Combining Inputs**: [`train_baseline.py`](file:///c:/Μεταπτυχιακο/Advanced%20Topics%20in%20Machine%20Learning/MCP-Security-Gateway/MCP-Security-Gateway/scripts/train_baseline.py) runs the inputs through `combine_goal_and_trace()` to form unified text structures:
+* **Combining Inputs**: [`train_baseline.py`](scripts/train_baseline.py) runs the inputs through `combine_goal_and_trace()` to form unified text structures:
   `"GOAL: {user_goal}\nTRACE: {agent_trace}"`
 * **Fitting the Pipeline**: The `DriftClassifier` fits the Scikit-Learn `Pipeline`. It first extracts vocabulary n-grams via `TfidfVectorizer` and then trains the estimator (Random Forest or Logistic Regression) to distinguish between benign paths and prompt injections.
 * **Serialization**: The trained model state is exported as a serialized joblib file (e.g., `models/logistic.joblib`).
 
 ### 3. Verification & Evaluation (Offline)
-* **Detection Horizon Simulation**: [`evaluate_horizon.py`](file:///c:/Μεταπτυχιακο/Advanced%20Topics%20in%20Machine%20Learning/MCP-Security-Gateway/MCP-Security-Gateway/scripts/evaluate_horizon.py) loops through each malicious trace. It feeds progressively longer reasoning prefixes (representing the agent thinking step-by-step) to the model.
+* **Detection Horizon Simulation**: [`evaluate_horizon.py`](scripts/evaluate_horizon.py) loops through each malicious trace. It feeds progressively longer reasoning prefixes (representing the agent thinking step-by-step) to the model.
 * **Horizon Output**: It calculates the speed of detection (how many steps prior to tool execution the model flagged the injection) and writes evaluation results to `reports/`.
 
 ### 4. Active Interception (Online Execution)
 * **Incoming Tool Call**: When the LLM agent attempts to access a resource (e.g. tool execution), the security gateway intercepts the request.
-* **Phase A: Honeypot Check**: [`MCPGuard`](file:///c:/Μεταπτυχιακο/Advanced%20Topics%20in%20Machine%20Learning/MCP-Security-Gateway/MCP-Security-Gateway/src/interceptor/guard.py) immediately checks if the target resource matches a decoy list (like `secrets.txt`). If it does, access is blocked immediately without classifier evaluation (malicious probability = 1.0).
+* **Phase A: Honeypot Check**: [`MCPGuard`](src/interceptor/guard.py) immediately checks if the target resource matches a decoy list (like `secrets.txt`). If it does, access is blocked immediately without classifier evaluation (malicious probability = 1.0).
 * **Phase B: Drift Analysis**: If not triggered by a honeypot, the user's initial goal and current agent trace are combined and evaluated by the `DriftClassifier`.
 * **Decision**: If the probability of hijack meets or exceeds `threshold`, the gate block is triggered. Otherwise, the tool call is permitted.
 
@@ -266,7 +264,6 @@ $env:PYTHONPATH="src"
 | **Compare all models** | `python scripts/compare_models.py` |
 | **Generate poster charts** | `python scripts/plots/plot_poster_charts.py` |
 | **Generate horizon comparison chart** | `python scripts/plots/plot_horizon.py` |
-| **Generate learning curve chart** | `python scripts/plots/plot_learning_curve.py` |
 
 ---
 
@@ -300,3 +297,9 @@ python scripts/prepare_bipia.py --bipia_dir data/bipia_repo/benchmark --out_dir 
 #    (requires CEREBRAS_API_KEY / GROQ_API_KEY / NVIDIA_API_KEY)
 python scripts/generate_llm_traces.py
 ```
+
+---
+
+## 📄 Poster
+
+![MCP Guard Poster](Poster-MCPGuard.png)
