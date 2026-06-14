@@ -294,7 +294,7 @@ python scripts/generate_benign.py   # writes data/processed/benign_synthetic.jso
 python scripts/prepare_bipia.py --bipia_dir data/bipia_repo/benchmark --out_dir data/processed --train_size 5000 --test_size 5000
 
 # 5. Optionally enrich traces with LLM-generated step-by-step reasoning
-#    (requires CEREBRAS_API_KEY / GROQ_API_KEY / NVIDIA_API_KEY)
+#    (requires CEREBRAS_API_KEY / GROQ_API_KEY / NVIDIA_API_KEY / OPENROUTER_API_KEY)
 python scripts/generate_llm_traces.py
 ```
 

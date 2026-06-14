@@ -25,6 +25,12 @@ PROVIDERS = [
         "model": "openai/gpt-oss-120b",
         "key_env": "NVIDIA_API_KEY",
     },
+    {
+        "name": "OpenRouter",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "model": "openai/gpt-oss-120b:free",
+        "key_env": "OPENROUTER_API_KEY",
+    },
 ]
 
 
@@ -48,7 +54,7 @@ class ProviderPool:
     def __init__(self) -> None:
         self.providers = _expand_providers()
         if not self.providers:
-            raise SystemExit("No API keys found. Set CEREBRAS_API_KEY, GROQ_API_KEY, or NVIDIA_API_KEY.")
+            raise SystemExit("No API keys found. Set CEREBRAS_API_KEY, GROQ_API_KEY, NVIDIA_API_KEY, or OPENROUTER_API_KEY.")
         self._index = 0
         print(f"Loaded providers: {[p['name'] for p in self.providers]}")
 
